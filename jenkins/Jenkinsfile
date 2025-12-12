@@ -253,15 +253,26 @@ pipeline {
         // ===========================================
         // Stage 10: Cleanup
         // ===========================================
+// ===========================================
+        // Stage 10: Cleanup
+        // ===========================================
         stage('Cleanup') {
             steps {
-                echo '🧹 Cleaning up...'
+                echo '🧹 Cleaning up to free space...'
                 sh '''
-                    # Remove local Docker images to save space
-                    docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
+                    # 1. Remove the specific images we just built
+                    docker rmi -f ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
+                    docker rmi -f ${DOCKER_IMAGE_NAME}:latest || true
                     
-                    # Clean up Python virtual environment
+                    # 2. Aggressively clean dangling layers (The most important command)
+                    # This removes intermediate build layers that eat up your space
+                    docker system prune -f
+                    
+                    # 3. Clean up Python virtual environment
                     rm -rf venv || true
+                    
+                    # 4. Clean up local models from workspace (Optional, saves space)
+                    # rm -rf models/ || true
                 '''
             }
         }
