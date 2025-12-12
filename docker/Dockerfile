@@ -44,7 +44,7 @@ RUN mkdir -p /var/log/mlops /app/models /app/data && \
     chown -R mlops:mlops /var/log/mlops /app
 
 # Copy Python packages from builder
-COPY --from=builder /root/.local /home/mlops/.local
+COPY --from=builder --chown=mlops:mlops /root/.local /home/mlops/.local
 ENV PATH=/home/mlops/.local/bin:$PATH
 
 # Copy application code
