@@ -129,9 +129,9 @@ dmypy.json
 .pyre/
 
 # Model files
-# models/*.joblib
+models/*.joblib
 models/*.pkl
-# models/*.json
+models/*.json
 !models/.gitkeep
 
 # Data files (keep sample, ignore full datasets)
