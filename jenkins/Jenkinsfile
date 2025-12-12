@@ -158,6 +158,12 @@ pipeline {
         // ===========================================
         stage('Build Docker Image') {
             steps {
+
+                echo '📂 Injecting local models into workspace...'
+                // --- ADD THIS (Update path to match the one you found in Step 3.1) ---
+                sh 'cp -r /mnt/c/Users/Lenovo/OneDrive/Desktop/mlops-credit-score/mlops-credit-score/models/* models/ || true'
+                // --------------------------------------------------------------------
+                
                 echo '🐳 Building Docker image...'
                 sh '''
                     docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} -f docker/Dockerfile .
