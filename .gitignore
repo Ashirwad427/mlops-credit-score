@@ -55,9 +55,19 @@ test-results.xml
 *.log
 local_settings.py
 
+# MLflow artifacts and large model files
+mlruns/
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+mlflow.db
+*.db
+
 # Flask stuff:
 instance/
-.webassets-cache
+.webaskets-cache
 
 # Scrapy stuff:
 .scrapy

@@ -1,6 +1,0 @@
-artifact_location: /home/percy811/Desktop/temp/mlops-credit-score/mlruns/690514033750655461
-creation_time: 1765436555589
-experiment_id: '690514033750655461'
-last_update_time: 1765436555589
-lifecycle_stage: active
-name: credit-score-training
