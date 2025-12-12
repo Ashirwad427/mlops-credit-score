@@ -51,6 +51,10 @@ ENV PATH=/home/mlops/.local/bin:$PATH
 COPY --chown=mlops:mlops app/ /app/app/
 COPY --chown=mlops:mlops data/ /app/data/
 
+# --- ADD THIS LINE ---
+COPY --chown=mlops:mlops models/ /app/models/
+# ---------------------
+
 # Switch to non-root user
 USER mlops
 
