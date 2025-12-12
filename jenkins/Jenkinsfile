@@ -7,7 +7,6 @@ pipeline {
     // GitHub Webhook Trigger - GITScm Polling
     triggers {
         githubPush()
-        pollSCM('H/5 * * * *')  // Fallback polling every 5 minutes
     }
     
     environment {
@@ -249,33 +248,6 @@ pipeline {
                 '''
             }
         }
-        
-        // ===========================================
-        // Stage 10: Cleanup
-        // ===========================================
-// ===========================================
-        // Stage 10: Cleanup
-        // ===========================================
-        stage('Cleanup') {
-            steps {
-                echo '🧹 Cleaning up to free space...'
-                sh '''
-                    # 1. Remove the specific images we just built
-                    docker rmi -f ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
-                    docker rmi -f ${DOCKER_IMAGE_NAME}:latest || true
-                    
-                    # 2. Aggressively clean dangling layers (The most important command)
-                    # This removes intermediate build layers that eat up your space
-                    docker system prune -f
-                    
-                    # 3. Clean up Python virtual environment
-                    rm -rf venv || true
-                    
-                    # 4. Clean up local models from workspace (Optional, saves space)
-                    # rm -rf models/ || true
-                '''
-            }
-        }
     }
     
     // ===========================================
@@ -310,6 +282,24 @@ pipeline {
         }
         
         always {
+
+            echo '🧹 Cleaning up to free space...'
+            sh '''
+                # 1. Remove the specific images we just built
+                docker rmi -f ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
+                docker rmi -f ${DOCKER_IMAGE_NAME}:latest || true
+                
+                # 2. Aggressively clean dangling layers (The most important command)
+                # This removes intermediate build layers that eat up your space
+                docker system prune -f
+                
+                # 3. Clean up Python virtual environment
+                rm -rf venv || true
+                
+                # 4. Clean up local models from workspace (Optional, saves space)
+                # rm -rf models/ || true
+            '''
+            
             // Archive test results
             archiveArtifacts artifacts: 'test-results.xml,coverage.xml', allowEmptyArchive: true
             
