@@ -13,19 +13,19 @@ pipeline {
     environment {
         // Docker Hub credentials (stored in Jenkins credentials)
         DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
-        DOCKER_IMAGE_NAME = 'yourusername/mlops-hiv-prediction'
+        DOCKER_IMAGE_NAME = 'ashirwad4/mlops-credit-score'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         
         // Kubernetes configuration
         KUBECONFIG = credentials('kubeconfig')
-        K8S_NAMESPACE = 'mlops-hiv'
+        K8S_NAMESPACE = 'mlops-credit'
         
         // Vault configuration
         VAULT_ADDR = 'http://vault:8200'
         VAULT_TOKEN = credentials('vault-token')
         
         // Application settings
-        APP_NAME = 'mlops-hiv-prediction'
+        APP_NAME = 'mlops-credit-score'
         PYTHON_VERSION = '3.10'
     }
     

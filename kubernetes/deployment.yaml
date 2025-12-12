@@ -51,7 +51,7 @@ spec:
       
       containers:
         - name: mlops-api
-          image: yourusername/mlops-credit-score:latest
+          image: ashirwad4/mlops-credit-score:latest
           imagePullPolicy: Always
           
           ports:
