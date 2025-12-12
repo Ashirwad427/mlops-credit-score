@@ -112,8 +112,8 @@ spec:
           
           # Volume mounts
           volumeMounts:
-            - name: model-storage
-              mountPath: /app/models
+            #- name: model-storage
+             # mountPath: /app/models
             - name: log-storage
               mountPath: /var/log/mlops
             - name: tmp-volume
@@ -129,8 +129,8 @@ spec:
       
       # Volumes
       volumes:
-        - name: model-storage
-          emptyDir: {}  # Changed from PVC to emptyDir for simplified deployment
+      #  - name: model-storage
+       #   emptyDir: {}  # Changed from PVC to emptyDir for simplified deployment
         - name: log-storage
           emptyDir: {}
         - name: tmp-volume
