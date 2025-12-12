@@ -115,19 +115,19 @@ pipeline {
                     pytest app/tests/ -v --junitxml=test-results.xml --cov=app --cov-report=xml:coverage.xml --cov-report=html:coverage-html
                 '''
             }
-            post {
-                always {
-                    junit 'test-results.xml'
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'coverage-html',
-                        reportFiles: 'index.html',
-                        reportName: 'Coverage Report'
-                    ])
-                }
-            }
+            // post {
+            //     always {
+            //         junit 'test-results.xml'
+            //         publishHTML(target: [
+            //             allowMissing: false,
+            //             alwaysLinkToLastBuild: true,
+            //             keepAll: true,
+            //             reportDir: 'coverage-html',
+            //             reportFiles: 'index.html',
+            //             reportName: 'Coverage Report'
+            //         ])
+            //     }
+            // }
         }
         
         // ===========================================
