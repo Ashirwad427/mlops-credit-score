@@ -1,0 +1,127 @@
+# Kubernetes Role - Main Tasks
+---
+- name: Disable swap
+  command: swapoff -a
+  changed_when: false
+
+- name: Remove swap from fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^.*swap.*$'
+    state: absent
+
+- name: Load required kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+
+- name: Set up required sysctl params
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+
+- name: Add Kubernetes GPG key
+  apt_key:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key
+    state: present
+
+- name: Add Kubernetes repository
+  apt_repository:
+    repo: "deb https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+    state: present
+    filename: kubernetes
+
+- name: Install Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: Hold Kubernetes packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: Start and enable kubelet
+  systemd:
+    name: kubelet
+    state: started
+    enabled: yes
+
+# Master node initialization
+- name: Initialize Kubernetes cluster
+  command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  args:
+    creates: /etc/kubernetes/admin.conf
+  when: inventory_hostname in groups['kubernetes_master']
+  register: kubeadm_init
+
+- name: Create .kube directory
+  file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+  when: inventory_hostname in groups['kubernetes_master']
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/.kube/config
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    mode: '0600'
+  when: inventory_hostname in groups['kubernetes_master']
+
+- name: Install Calico network plugin
+  become: no
+  command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+  when: 
+    - inventory_hostname in groups['kubernetes_master']
+    - kubeadm_init.changed
+
+- name: Get join command
+  command: kubeadm token create --print-join-command
+  register: join_command
+  when: inventory_hostname in groups['kubernetes_master']
+  changed_when: false
+
+- name: Store join command
+  set_fact:
+    k8s_join_command: "{{ join_command.stdout }}"
+  when: inventory_hostname in groups['kubernetes_master']
+
+# Worker node join
+- name: Join worker nodes to cluster
+  command: "{{ hostvars[groups['kubernetes_master'][0]].k8s_join_command }}"
+  args:
+    creates: /etc/kubernetes/kubelet.conf
+  when: inventory_hostname in groups['kubernetes_workers']
+
+- name: Verify cluster status
+  become: no
+  command: kubectl get nodes
+  register: cluster_status
+  when: inventory_hostname in groups['kubernetes_master']
+  changed_when: false
+
+- name: Display cluster status
+  debug:
+    msg: "{{ cluster_status.stdout_lines }}"
+  when: inventory_hostname in groups['kubernetes_master']

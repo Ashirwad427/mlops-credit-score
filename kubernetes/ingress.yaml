@@ -1,0 +1,110 @@
+# Kubernetes Ingress for MLOps Application
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlops-credit-score-ingress
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+spec:
+  rules:
+    - host: mlops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mlops-credit-score
+                port:
+                  number: 5000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: mlops-credit-score
+                port:
+                  number: 5000
+  # TLS configuration (optional)
+  # tls:
+  #   - hosts:
+  #       - mlops.example.com
+  #     secretName: mlops-tls-secret
+
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mlops-credit-score-network-policy
+  namespace: mlops-credit
+spec:
+  podSelector:
+    matchLabels:
+      app: mlops-credit-score
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 5000
+    # Allow traffic from within the namespace
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5000
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 5000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow external HTTPS
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow Vault access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: vault
+      ports:
+        - protocol: TCP
+          port: 8200
+    # Allow Elasticsearch access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: elk
+      ports:
+        - protocol: TCP
+          port: 9200

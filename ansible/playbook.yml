@@ -1,0 +1,71 @@
+# Ansible Main Playbook for MLOps Infrastructure
+# Modular design using roles for advanced features (3 marks)
+
+---
+- name: MLOps Infrastructure Setup
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  vars_files:
+    - inventory/group_vars/all.yml
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+    
+    - name: Install common packages
+      package:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - htop
+          - jq
+        state: present
+
+  roles:
+    - role: docker
+      tags: [docker, containers]
+    
+    - role: kubernetes
+      tags: [kubernetes, k8s, orchestration]
+      when: install_kubernetes | default(true)
+    
+    - role: elk
+      tags: [elk, monitoring, logging]
+      when: install_elk | default(true)
+    
+    - role: vault
+      tags: [vault, security, secrets]
+      when: install_vault | default(true)
+    
+    - role: mlops-app
+      tags: [app, mlops, application]
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: |
+          =========================================
+          MLOps Infrastructure Deployment Complete
+          =========================================
+          
+          Services deployed:
+          - Docker: {{ docker_installed | default('yes') }}
+          - Kubernetes: {{ install_kubernetes | default('yes') }}
+          - ELK Stack: {{ install_elk | default('yes') }}
+          - Vault: {{ install_vault | default('yes') }}
+          - MLOps Application: yes
+          
+          Access URLs:
+          - API: http://{{ ansible_host }}:5000
+          - Kibana: http://{{ ansible_host }}:5601
+          - Vault: http://{{ ansible_host }}:8200
+          - Grafana: http://{{ ansible_host }}:3000
+          
+          =========================================

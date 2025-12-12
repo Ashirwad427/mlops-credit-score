@@ -1,0 +1,238 @@
+# ELK Stack Role - Main Tasks
+---
+- name: Create ELK data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/elk
+    - /opt/elk/elasticsearch/data
+    - /opt/elk/logstash/pipeline
+    - /opt/elk/logstash/config
+    - /opt/elk/kibana
+
+- name: Set vm.max_map_count for Elasticsearch
+  sysctl:
+    name: vm.max_map_count
+    value: '262144'
+    state: present
+    reload: yes
+
+- name: Create Elasticsearch Docker Compose file
+  copy:
+    content: |
+      version: '3.8'
+      
+      services:
+        elasticsearch:
+          image: docker.elastic.co/elasticsearch/elasticsearch:{{ elk_version }}
+          container_name: elasticsearch
+          environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - "ES_JAVA_OPTS=-Xms{{ elasticsearch.heap_size }} -Xmx{{ elasticsearch.heap_size }}"
+            - bootstrap.memory_lock=true
+            - cluster.name={{ elasticsearch.cluster_name }}
+          ulimits:
+            memlock:
+              soft: -1
+              hard: -1
+          volumes:
+            - elasticsearch-data:/usr/share/elasticsearch/data
+          ports:
+            - "{{ elasticsearch.port }}:9200"
+            - "9300:9300"
+          networks:
+            - elk
+          healthcheck:
+            test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green\\|status.*yellow'"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+          restart: unless-stopped
+        
+        logstash:
+          image: docker.elastic.co/logstash/logstash:{{ elk_version }}
+          container_name: logstash
+          environment:
+            - "LS_JAVA_OPTS=-Xms{{ logstash.heap_size }} -Xmx{{ logstash.heap_size }}"
+          volumes:
+            - /opt/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
+            - /opt/elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+            - /var/log/mlops:/var/log/mlops:ro
+          ports:
+            - "{{ logstash.port }}:5044"
+            - "5045:5045"
+            - "9600:9600"
+          networks:
+            - elk
+          depends_on:
+            - elasticsearch
+          restart: unless-stopped
+        
+        kibana:
+          image: docker.elastic.co/kibana/kibana:{{ elk_version }}
+          container_name: kibana
+          environment:
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+          ports:
+            - "{{ kibana.port }}:5601"
+          networks:
+            - elk
+          depends_on:
+            - elasticsearch
+          healthcheck:
+            test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+          restart: unless-stopped
+        
+        filebeat:
+          image: docker.elastic.co/beats/filebeat:{{ elk_version }}
+          container_name: filebeat
+          user: root
+          volumes:
+            - /opt/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+            - /var/log/mlops:/var/log/mlops:ro
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+          networks:
+            - elk
+          depends_on:
+            - elasticsearch
+            - logstash
+          restart: unless-stopped
+      
+      volumes:
+        elasticsearch-data:
+          driver: local
+      
+      networks:
+        elk:
+          driver: bridge
+    dest: /opt/elk/docker-compose.yml
+    mode: '0644'
+
+- name: Create Logstash pipeline configuration
+  copy:
+    content: |
+      input {
+        beats {
+          port => 5044
+        }
+        
+        tcp {
+          port => 5045
+          codec => json_lines
+        }
+        
+        file {
+          path => "/var/log/mlops/*.log"
+          start_position => "beginning"
+          codec => json
+          tags => ["mlops", "application"]
+        }
+      }
+      
+      filter {
+        if [app] == "mlops-credit-score" {
+          mutate {
+            add_field => { "application" => "mlops-credit-score" }
+          }
+          
+          if [extra][event_type] == "prediction" {
+            mutate {
+              add_tag => ["prediction"]
+            }
+          }
+          
+          if [extra][event_type] == "training" {
+            mutate {
+              add_tag => ["training"]
+            }
+          }
+        }
+        
+        date {
+          match => ["@timestamp", "ISO8601"]
+          target => "@timestamp"
+        }
+      }
+      
+      output {
+        elasticsearch {
+          hosts => ["elasticsearch:9200"]
+          index => "mlops-logs-%{+YYYY.MM.dd}"
+        }
+        
+        stdout {
+          codec => rubydebug
+        }
+      }
+    dest: /opt/elk/logstash/pipeline/mlops.conf
+    mode: '0644'
+
+- name: Create Logstash config
+  copy:
+    content: |
+      http.host: "0.0.0.0"
+      xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]
+    dest: /opt/elk/logstash/config/logstash.yml
+    mode: '0644'
+
+- name: Create Filebeat configuration
+  copy:
+    content: |
+      filebeat.inputs:
+        - type: container
+          paths:
+            - /var/lib/docker/containers/*/*.log
+          processors:
+            - add_docker_metadata:
+                host: "unix:///var/run/docker.sock"
+        
+        - type: log
+          paths:
+            - /var/log/mlops/*.log
+          json.keys_under_root: true
+          json.add_error_key: true
+          json.message_key: message
+      
+      output.elasticsearch:
+        hosts: ["elasticsearch:9200"]
+        indices:
+          - index: "mlops-logs-%{+yyyy.MM.dd}"
+            when.contains:
+              tags: "mlops"
+          - index: "docker-logs-%{+yyyy.MM.dd}"
+            when.contains:
+              docker.container.name: ""
+      
+      setup.kibana:
+        host: "kibana:5601"
+    dest: /opt/elk/filebeat/filebeat.yml
+    mode: '0644'
+  
+- name: Start ELK Stack
+  command: docker-compose up -d
+  args:
+    chdir: /opt/elk
+
+- name: Wait for Elasticsearch to be ready
+  uri:
+    url: "http://localhost:{{ elasticsearch.port }}/_cluster/health"
+    method: GET
+  register: es_health
+  until: es_health.status == 200
+  retries: 30
+  delay: 10
+
+- name: Display ELK status
+  debug:
+    msg: |
+      ELK Stack deployed successfully!
+      - Elasticsearch: http://{{ ansible_host }}:{{ elasticsearch.port }}
+      - Kibana: http://{{ ansible_host }}:{{ kibana.port }}
+      - Logstash: http://{{ ansible_host }}:{{ logstash.port }}

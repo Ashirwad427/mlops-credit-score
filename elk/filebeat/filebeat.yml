@@ -1,0 +1,95 @@
+# Filebeat Configuration for MLOps
+# Collects logs from Docker containers and application log files
+
+filebeat.inputs:
+  # Docker container logs
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - decode_json_fields:
+          fields: ["message"]
+          process_array: false
+          max_depth: 2
+          target: ""
+          overwrite_keys: true
+    
+  # MLOps application logs (JSON format)
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/mlops/*.log
+    json.keys_under_root: true
+    json.add_error_key: true
+    json.message_key: message
+    json.overwrite_keys: true
+    tags: ["mlops", "application"]
+    fields:
+      app: mlops-credit-score
+    fields_under_root: true
+
+# Autodiscover Docker containers
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+      templates:
+        - condition:
+            contains:
+              docker.container.name: mlops
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              json.keys_under_root: true
+              json.add_error_key: true
+
+# Processors for all inputs
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - drop_fields:
+      fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.version", "agent.type", "ecs.version"]
+      ignore_missing: true
+
+# Output to Elasticsearch
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  indices:
+    - index: "mlops-logs-%{+yyyy.MM.dd}"
+      when.contains:
+        tags: "mlops"
+    - index: "docker-logs-%{+yyyy.MM.dd}"
+      when.has_fields: ["docker.container.name"]
+    - index: "filebeat-%{+yyyy.MM.dd}"
+
+# Output to Logstash (alternative)
+# output.logstash:
+#   hosts: ["logstash:5044"]
+
+# Kibana setup
+setup.kibana:
+  host: "kibana:5601"
+  
+# Index template settings
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+
+# ILM (Index Lifecycle Management)
+setup.ilm.enabled: true
+setup.ilm.rollover_alias: "mlops-logs"
+setup.ilm.pattern: "{now/d}-000001"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0640

@@ -1,0 +1,126 @@
+# MLOps Application Role - Main Tasks
+---
+- name: Create application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/mlops
+    - /opt/mlops/data
+    - /opt/mlops/models
+    - /var/log/mlops
+
+- name: Copy application data
+  copy:
+    src: "{{ playbook_dir }}/../data/"
+    dest: /opt/mlops/data/
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Copy application code
+  copy:
+    src: "{{ playbook_dir }}/../app/"
+    dest: /opt/mlops/app/
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Copy Docker files
+  copy:
+    src: "{{ playbook_dir }}/../docker/"
+    dest: /opt/mlops/docker/
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Copy requirements.txt
+  copy:
+    src: "{{ playbook_dir }}/../requirements.txt"
+    dest: /opt/mlops/requirements.txt
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Pull MLOps Docker image
+  docker_image:
+    name: "{{ docker_image }}:{{ docker_tag }}"
+    source: pull
+  ignore_errors: yes
+
+- name: Create application Docker Compose file
+  copy:
+    content: |
+      version: '3.8'
+      
+      services:
+        mlops-api:
+          image: {{ docker_image }}:{{ docker_tag }}
+          container_name: mlops-api
+          ports:
+            - "{{ app_port }}:5000"
+          environment:
+            - PORT=5000
+            - MODEL_DIR=/app/models
+            - LOG_FILE=/var/log/mlops/app.log
+            - JSON_LOGGING={{ json_logging | lower }}
+            - LOG_LEVEL=INFO
+            - VAULT_ADDR=http://vault:8200
+            - VAULT_TOKEN=mlops-dev-token
+          volumes:
+            - mlops-models:/app/models
+            - mlops-logs:/var/log/mlops
+            - /opt/mlops/data:/app/data:ro
+          networks:
+            - mlops-network
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+          restart: unless-stopped
+          deploy:
+            replicas: 2
+            resources:
+              limits:
+                cpus: '0.5'
+                memory: 512M
+              reservations:
+                cpus: '0.25'
+                memory: 256M
+      
+      volumes:
+        mlops-models:
+          driver: local
+        mlops-logs:
+          driver: local
+      
+      networks:
+        mlops-network:
+          external: true
+    dest: /opt/mlops/docker-compose.yml
+    mode: '0644'
+
+- name: Create Docker network if not exists
+  docker_network:
+    name: mlops-network
+    state: present
+
+- name: Deploy MLOps application
+  command: docker-compose up -d
+  args:
+    chdir: /opt/mlops
+
+- name: Wait for application to be ready
+  uri:
+    url: "http://localhost:{{ app_port }}/health"
+    method: GET
+  register: app_health
+  until: app_health.status == 200
+  retries: 30
+  delay: 5
+
+- name: Display application status
+  debug:
+    msg: |
+      MLOps Application deployed successfully!
+      - API: http://{{ ansible_host }}:{{ app_port }}
+      - Health: http://{{ ansible_host }}:{{ app_port }}/health
+      - Metrics: http://{{ ansible_host }}:{{ app_port }}/metrics

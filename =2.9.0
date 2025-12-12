@@ -1,0 +1,183 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting mlflow
+  Downloading mlflow-3.7.0-py3-none-any.whl (8.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.9/8.9 MB 1.6 MB/s eta 0:00:00
+Collecting scipy<2
+  Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+Collecting gunicorn<24
+  Using cached gunicorn-23.0.0-py3-none-any.whl (85 kB)
+Requirement already satisfied: pandas<3 in /home/percy811/.local/lib/python3.10/site-packages (from mlflow) (2.3.3)
+Requirement already satisfied: Flask<4 in /home/percy811/.local/lib/python3.10/site-packages (from mlflow) (3.1.2)
+Collecting mlflow-tracing==3.7.0
+  Downloading mlflow_tracing-3.7.0-py3-none-any.whl (1.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 1.6 MB/s eta 0:00:00
+Collecting Flask-CORS<7
+  Using cached flask_cors-6.0.1-py3-none-any.whl (13 kB)
+Collecting cryptography<47,>=43.0.0
+  Downloading cryptography-46.0.3-cp38-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 3.5 MB/s eta 0:00:00
+Requirement already satisfied: docker<8,>=4.0.0 in /usr/local/lib/python3.10/dist-packages (from mlflow) (7.1.0)
+Collecting graphene<4
+  Downloading graphene-3.4.3-py2.py3-none-any.whl (114 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114.9/114.9 KB 14.9 MB/s eta 0:00:00
+Requirement already satisfied: numpy<3 in /home/percy811/.local/lib/python3.10/site-packages (from mlflow) (2.2.6)
+Collecting pyarrow<23,>=4.0.0
+  Downloading pyarrow-22.0.0-cp310-cp310-manylinux_2_28_x86_64.whl (47.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.6/47.6 MB 5.1 MB/s eta 0:00:00
+Collecting sqlalchemy<3,>=1.4.0
+  Downloading sqlalchemy-2.0.45-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 2.3 MB/s eta 0:00:00
+Collecting huey<3,>=2.5.0
+  Downloading huey-2.5.5-py3-none-any.whl (76 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 76.9/76.9 KB 9.5 MB/s eta 0:00:00
+Collecting alembic!=1.10.0,<2
+  Downloading alembic-1.17.2-py3-none-any.whl (248 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 248.6/248.6 KB 5.5 MB/s eta 0:00:00
+Collecting matplotlib<4
+  Downloading matplotlib-3.10.7-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (8.7 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.7/8.7 MB 17.2 MB/s eta 0:00:00
+Collecting scikit-learn<2
+  Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+Collecting mlflow-skinny==3.7.0
+  Downloading mlflow_skinny-3.7.0-py3-none-any.whl (2.4 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.4/2.4 MB 2.7 MB/s eta 0:00:00
+Collecting opentelemetry-api<3,>=1.9.0
+  Downloading opentelemetry_api-1.39.0-py3-none-any.whl (66 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 66.4/66.4 KB 8.8 MB/s eta 0:00:00
+Collecting fastapi<1
+  Downloading fastapi-0.124.2-py3-none-any.whl (112 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 112.7/112.7 KB 5.6 MB/s eta 0:00:00
+Collecting typing-extensions<5,>=4.0.0
+  Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Requirement already satisfied: packaging<26 in /usr/lib/python3/dist-packages (from mlflow-skinny==3.7.0->mlflow) (21.3)
+Collecting opentelemetry-sdk<3,>=1.9.0
+  Downloading opentelemetry_sdk-1.39.0-py3-none-any.whl (132 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 132.4/132.4 KB 28.0 MB/s eta 0:00:00
+Collecting databricks-sdk<1,>=0.20.0
+  Downloading databricks_sdk-0.74.0-py3-none-any.whl (764 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 764.2/764.2 KB 11.4 MB/s eta 0:00:00
+Collecting cachetools<7,>=5.0.0
+  Downloading cachetools-6.2.2-py3-none-any.whl (11 kB)
+Requirement already satisfied: importlib_metadata!=4.7.0,<9,>=3.7.0 in /usr/lib/python3/dist-packages (from mlflow-skinny==3.7.0->mlflow) (4.6.4)
+Collecting cloudpickle<4
+  Downloading cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Requirement already satisfied: requests<3,>=2.17.3 in /usr/local/lib/python3.10/dist-packages (from mlflow-skinny==3.7.0->mlflow) (2.32.5)
+Collecting opentelemetry-proto<3,>=1.9.0
+  Downloading opentelemetry_proto-1.39.0-py3-none-any.whl (72 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 72.5/72.5 KB 24.8 MB/s eta 0:00:00
+Requirement already satisfied: protobuf<7,>=3.12.0 in /usr/lib/python3/dist-packages (from mlflow-skinny==3.7.0->mlflow) (3.12.4)
+Collecting sqlparse<1,>=0.4.0
+  Downloading sqlparse-0.5.4-py3-none-any.whl (45 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.9/45.9 KB 11.4 MB/s eta 0:00:00
+Requirement already satisfied: click<9,>=7.0 in /home/percy811/.local/lib/python3.10/site-packages (from mlflow-skinny==3.7.0->mlflow) (8.3.0)
+Requirement already satisfied: pyyaml<7,>=5.1 in /usr/lib/python3/dist-packages (from mlflow-skinny==3.7.0->mlflow) (5.4.1)
+Collecting uvicorn<1
+  Downloading uvicorn-0.38.0-py3-none-any.whl (68 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.1/68.1 KB 7.9 MB/s eta 0:00:00
+Collecting pydantic<3,>=2.0.0
+  Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 463.6/463.6 KB 21.4 MB/s eta 0:00:00
+Requirement already satisfied: python-dotenv<2,>=0.19.0 in /usr/lib/python3/dist-packages (from mlflow-skinny==3.7.0->mlflow) (0.19.2)
+Collecting gitpython<4,>=3.1.9
+  Downloading gitpython-3.1.45-py3-none-any.whl (208 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 208.2/208.2 KB 6.5 MB/s eta 0:00:00
+Collecting tomli
+  Using cached tomli-2.3.0-py3-none-any.whl (14 kB)
+Collecting Mako
+  Downloading mako-1.3.10-py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 KB 14.2 MB/s eta 0:00:00
+Collecting cffi>=2.0.0
+  Downloading cffi-2.0.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (216 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 216.5/216.5 KB 18.3 MB/s eta 0:00:00
+Requirement already satisfied: urllib3>=1.26.0 in /usr/lib/python3/dist-packages (from docker<8,>=4.0.0->mlflow) (1.26.5)
+Requirement already satisfied: werkzeug>=3.1.0 in /home/percy811/.local/lib/python3.10/site-packages (from Flask<4->mlflow) (3.1.3)
+Requirement already satisfied: jinja2>=3.1.2 in /home/percy811/.local/lib/python3.10/site-packages (from Flask<4->mlflow) (3.1.6)
+Requirement already satisfied: markupsafe>=2.1.1 in /home/percy811/.local/lib/python3.10/site-packages (from Flask<4->mlflow) (3.0.3)
+Requirement already satisfied: blinker>=1.9.0 in /home/percy811/.local/lib/python3.10/site-packages (from Flask<4->mlflow) (1.9.0)
+Requirement already satisfied: itsdangerous>=2.2.0 in /home/percy811/.local/lib/python3.10/site-packages (from Flask<4->mlflow) (2.2.0)
+Collecting graphql-core<3.3,>=3.1
+  Downloading graphql_core-3.2.7-py3-none-any.whl (207 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 207.3/207.3 KB 11.6 MB/s eta 0:00:00
+Collecting graphql-relay<3.3,>=3.1
+  Downloading graphql_relay-3.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: python-dateutil<3,>=2.7.0 in /home/percy811/.local/lib/python3.10/site-packages (from graphene<4->mlflow) (2.9.0.post0)
+Collecting pyparsing>=3
+  Downloading pyparsing-3.2.5-py3-none-any.whl (113 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.9/113.9 KB 4.0 MB/s eta 0:00:00
+Collecting fonttools>=4.22.0
+  Downloading fonttools-4.61.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 13.5 MB/s eta 0:00:00
+Collecting kiwisolver>=1.3.1
+  Downloading kiwisolver-1.4.9-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 17.0 MB/s eta 0:00:00
+Collecting cycler>=0.10
+  Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Collecting contourpy>=1.0.1
+  Downloading contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.0/325.0 KB 3.3 MB/s eta 0:00:00
+Collecting pillow>=8
+  Downloading pillow-12.0.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 6.8 MB/s eta 0:00:00
+Requirement already satisfied: tzdata>=2022.7 in /home/percy811/.local/lib/python3.10/site-packages (from pandas<3->mlflow) (2025.2)
+Requirement already satisfied: pytz>=2020.1 in /usr/lib/python3/dist-packages (from pandas<3->mlflow) (2022.1)
+Collecting joblib>=1.2.0
+  Using cached joblib-1.5.2-py3-none-any.whl (308 kB)
+Collecting threadpoolctl>=3.1.0
+  Using cached threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Collecting greenlet>=1
+  Downloading greenlet-3.3.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (586 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 586.9/586.9 KB 71.8 MB/s eta 0:00:00
+Collecting pycparser
+  Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 KB 11.3 MB/s eta 0:00:00
+Collecting protobuf<7,>=3.12.0
+  Downloading protobuf-6.33.2-cp39-abi3-manylinux2014_x86_64.whl (323 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 323.3/323.3 KB 12.6 MB/s eta 0:00:00
+Collecting google-auth~=2.0
+  Downloading google_auth-2.43.0-py2.py3-none-any.whl (223 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 223.1/223.1 KB 14.5 MB/s eta 0:00:00
+Collecting starlette<0.51.0,>=0.40.0
+  Downloading starlette-0.50.0-py3-none-any.whl (74 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.0/74.0 KB 16.8 MB/s eta 0:00:00
+Collecting annotated-doc>=0.0.2
+  Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+Collecting gitdb<5,>=4.0.1
+  Downloading gitdb-4.0.12-py3-none-any.whl (62 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.8/62.8 KB 5.6 MB/s eta 0:00:00
+Collecting importlib_metadata!=4.7.0,<9,>=3.7.0
+  Downloading importlib_metadata-8.7.0-py3-none-any.whl (27 kB)
+Collecting zipp>=3.20
+  Downloading zipp-3.23.0-py3-none-any.whl (10 kB)
+Collecting opentelemetry-semantic-conventions==0.60b0
+  Downloading opentelemetry_semantic_conventions-0.60b0-py3-none-any.whl (219 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 220.0/220.0 KB 35.0 MB/s eta 0:00:00
+Collecting typing-inspection>=0.4.2
+  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Collecting annotated-types>=0.6.0
+  Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Collecting pydantic-core==2.41.5
+  Downloading pydantic_core-2.41.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 4.6 MB/s eta 0:00:00
+Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil<3,>=2.7.0->graphene<4->mlflow) (1.16.0)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests<3,>=2.17.3->mlflow-skinny==3.7.0->mlflow) (3.3)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/local/lib/python3.10/dist-packages (from requests<3,>=2.17.3->mlflow-skinny==3.7.0->mlflow) (3.4.3)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests<3,>=2.17.3->mlflow-skinny==3.7.0->mlflow) (2020.6.20)
+Collecting h11>=0.8
+  Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Collecting smmap<6,>=3.0.1
+  Downloading smmap-5.0.2-py3-none-any.whl (24 kB)
+Collecting rsa<5,>=3.1.4
+  Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+Collecting pyasn1-modules>=0.2.1
+  Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 KB 10.9 MB/s eta 0:00:00
+Collecting anyio<5,>=3.6.2
+  Downloading anyio-4.12.0-py3-none-any.whl (113 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.4/113.4 KB 38.8 MB/s eta 0:00:00
+Collecting exceptiongroup>=1.0.2
+  Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+Collecting pyasn1<0.7.0,>=0.6.1
+  Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 KB 18.5 MB/s eta 0:00:00
+Installing collected packages: huey, zipp, typing-extensions, tomli, threadpoolctl, sqlparse, smmap, scipy, pyparsing, pycparser, pyasn1, pyarrow, protobuf, pillow, Mako, kiwisolver, joblib, h11, gunicorn, greenlet, graphql-core, fonttools, cycler, contourpy, cloudpickle, cachetools, annotated-types, annotated-doc, uvicorn, typing-inspection, sqlalchemy, scikit-learn, rsa, pydantic-core, pyasn1-modules, opentelemetry-proto, matplotlib, importlib_metadata, graphql-relay, gitdb, exceptiongroup, cffi, pydantic, opentelemetry-api, graphene, google-auth, gitpython, Flask-CORS, cryptography, anyio, alembic, starlette, opentelemetry-semantic-conventions, databricks-sdk, opentelemetry-sdk, fastapi, mlflow-tracing, mlflow-skinny, mlflow
+Successfully installed Flask-CORS-6.0.1 Mako-1.3.10 alembic-1.17.2 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.12.0 cachetools-6.2.2 cffi-2.0.0 cloudpickle-3.1.2 contourpy-1.3.2 cryptography-46.0.3 cycler-0.12.1 databricks-sdk-0.74.0 exceptiongroup-1.3.1 fastapi-0.124.2 fonttools-4.61.0 gitdb-4.0.12 gitpython-3.1.45 google-auth-2.43.0 graphene-3.4.3 graphql-core-3.2.7 graphql-relay-3.2.0 greenlet-3.3.0 gunicorn-23.0.0 h11-0.16.0 huey-2.5.5 importlib_metadata-8.7.0 joblib-1.5.2 kiwisolver-1.4.9 matplotlib-3.10.7 mlflow-3.7.0 mlflow-skinny-3.7.0 mlflow-tracing-3.7.0 opentelemetry-api-1.39.0 opentelemetry-proto-1.39.0 opentelemetry-sdk-1.39.0 opentelemetry-semantic-conventions-0.60b0 pillow-12.0.0 protobuf-6.33.2 pyarrow-22.0.0 pyasn1-0.6.1 pyasn1-modules-0.4.2 pycparser-2.23 pydantic-2.12.5 pydantic-core-2.41.5 pyparsing-3.2.5 rsa-4.9.1 scikit-learn-1.7.2 scipy-1.15.3 smmap-5.0.2 sqlalchemy-2.0.45 sqlparse-0.5.4 starlette-0.50.0 threadpoolctl-3.6.0 tomli-2.3.0 typing-extensions-4.15.0 typing-inspection-0.4.2 uvicorn-0.38.0 zipp-3.23.0

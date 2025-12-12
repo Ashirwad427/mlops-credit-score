@@ -1,0 +1,139 @@
+{
+  "index_patterns": ["mlops-logs-*", "mlops-predictions-*", "mlops-training-*", "mlops-errors-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "mlops-ilm-policy",
+      "index.lifecycle.rollover_alias": "mlops-logs"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "level": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "app": {
+          "type": "keyword"
+        },
+        "application": {
+          "type": "keyword"
+        },
+        "environment": {
+          "type": "keyword"
+        },
+        "logger": {
+          "type": "keyword"
+        },
+        "module": {
+          "type": "keyword"
+        },
+        "function": {
+          "type": "keyword"
+        },
+        "line": {
+          "type": "integer"
+        },
+        "thread": {
+          "type": "long"
+        },
+        "process": {
+          "type": "long"
+        },
+        "extra": {
+          "properties": {
+            "event_type": {
+              "type": "keyword"
+            },
+            "request_id": {
+              "type": "keyword"
+            },
+            "prediction": {
+              "type": "keyword"
+            },
+            "probability": {
+              "type": "float"
+            },
+            "latency_ms": {
+              "type": "float"
+            },
+            "model_version": {
+              "type": "keyword"
+            },
+            "model_name": {
+              "type": "keyword"
+            },
+            "metrics": {
+              "properties": {
+                "f1_macro": {
+                  "type": "float"
+                },
+                "accuracy": {
+                  "type": "float"
+                },
+                "precision_macro": {
+                  "type": "float"
+                },
+                "recall_macro": {
+                  "type": "float"
+                }
+              }
+            },
+            "duration_seconds": {
+              "type": "float"
+            },
+            "data_size": {
+              "type": "integer"
+            },
+            "error_type": {
+              "type": "keyword"
+            },
+            "error_message": {
+              "type": "text"
+            }
+          }
+        },
+        "prediction_class": {
+          "type": "keyword"
+        },
+        "latency_ms": {
+          "type": "float"
+        },
+        "model_name": {
+          "type": "keyword"
+        },
+        "container_name": {
+          "type": "keyword"
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "geoip": {
+          "properties": {
+            "location": {
+              "type": "geo_point"
+            },
+            "country_name": {
+              "type": "keyword"
+            },
+            "city_name": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  },
+  "priority": 100
+}

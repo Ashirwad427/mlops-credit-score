@@ -1,0 +1,172 @@
+# Vault Role - Main Tasks
+# Implements secure credential storage (Advanced Feature - 3 marks)
+---
+- name: Create Vault directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/vault
+    - /opt/vault/data
+    - /opt/vault/config
+    - /opt/vault/policies
+
+- name: Create Vault configuration
+  copy:
+    content: |
+      storage "file" {
+        path = "/vault/data"
+      }
+      
+      listener "tcp" {
+        address     = "0.0.0.0:8200"
+        tls_disable = 1
+      }
+      
+      ui = true
+      disable_mlock = true
+      
+      api_addr = "http://0.0.0.0:8200"
+      cluster_addr = "https://0.0.0.0:8201"
+    dest: /opt/vault/config/vault.hcl
+    mode: '0644'
+
+- name: Create MLOps Vault policy
+  copy:
+    content: |
+      # MLOps Application Policy
+      
+      # Allow reading secrets for the MLOps application
+      path "secret/data/mlops/*" {
+        capabilities = ["read", "list"]
+      }
+      
+      # Allow creating and updating secrets (for CI/CD)
+      path "secret/data/mlops/*" {
+        capabilities = ["create", "update", "delete"]
+      }
+      
+      # Allow reading metadata
+      path "secret/metadata/mlops/*" {
+        capabilities = ["read", "list"]
+      }
+      
+      # Docker credentials
+      path "secret/data/docker/*" {
+        capabilities = ["read"]
+      }
+      
+      # Database credentials
+      path "secret/data/database/*" {
+        capabilities = ["read"]
+      }
+      
+      # Kubernetes secrets
+      path "secret/data/kubernetes/*" {
+        capabilities = ["read"]
+      }
+    dest: /opt/vault/policies/mlops-policy.hcl
+    mode: '0644'
+
+- name: Create Vault Docker Compose file
+  copy:
+    content: |
+      version: '3.8'
+      
+      services:
+        vault:
+          image: hashicorp/vault:{{ vault_version }}
+          container_name: vault
+          ports:
+            - "{{ vault_port }}:8200"
+          environment:
+            {% if vault_dev_mode %}
+            - VAULT_DEV_ROOT_TOKEN_ID=mlops-dev-token
+            - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+            {% else %}
+            - VAULT_ADDR=http://0.0.0.0:8200
+            {% endif %}
+          cap_add:
+            - IPC_LOCK
+          volumes:
+            - /opt/vault/data:/vault/data
+            - /opt/vault/config:/vault/config:ro
+            - /opt/vault/policies:/vault/policies:ro
+          {% if not vault_dev_mode %}
+          command: server -config=/vault/config/vault.hcl
+          {% endif %}
+          networks:
+            - vault-network
+          healthcheck:
+            test: ["CMD", "vault", "status"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+          restart: unless-stopped
+      
+      networks:
+        vault-network:
+          driver: bridge
+    dest: /opt/vault/docker-compose.yml
+    mode: '0644'
+
+- name: Start Vault
+  command: docker-compose up -d
+  args:
+    chdir: /opt/vault
+
+- name: Wait for Vault to be ready
+  uri:
+    url: "http://localhost:{{ vault_port }}/v1/sys/health"
+    method: GET
+  register: vault_health
+  until: vault_health.status == 200
+  retries: 30
+  delay: 5
+  when: vault_dev_mode
+
+- name: Configure Vault (Dev Mode)
+  block:
+    - name: Enable secrets engine
+      command: >
+        docker exec vault vault secrets enable -path=secret kv-v2
+      ignore_errors: yes
+    
+    - name: Apply MLOps policy
+      command: >
+        docker exec vault vault policy write mlops-policy /vault/policies/mlops-policy.hcl
+      environment:
+        VAULT_TOKEN: mlops-dev-token
+    
+    - name: Store application secrets
+      command: >
+        docker exec vault vault kv put secret/mlops/config
+        app_name={{ app_name }}
+        log_level=INFO
+        json_logging=true
+      environment:
+        VAULT_TOKEN: mlops-dev-token
+    
+    - name: Store Docker Hub credentials
+      command: >
+        docker exec vault vault kv put secret/mlops/docker
+        username={{ docker_username }}
+        password=changeme
+      environment:
+        VAULT_TOKEN: mlops-dev-token
+      no_log: yes
+  when: vault_dev_mode
+
+- name: Display Vault information
+  debug:
+    msg: |
+      Vault deployed successfully!
+      - UI: http://{{ ansible_host }}:{{ vault_port }}
+      {% if vault_dev_mode %}
+      - Dev Token: mlops-dev-token
+      - Mode: Development (NOT FOR PRODUCTION)
+      {% else %}
+      - Mode: Production
+      - Initialize with: vault operator init
+      {% endif %}

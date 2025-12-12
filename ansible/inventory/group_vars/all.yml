@@ -1,0 +1,122 @@
+# Global Variables for MLOps Ansible Playbook
+---
+
+# ===========================================
+# Application Configuration
+# ===========================================
+app_name: mlops-credit-score
+app_version: "1.0.0"
+app_port: 5000
+
+# Docker Hub Configuration
+docker_registry: docker.io
+docker_username: yourusername
+docker_image: "{{ docker_registry }}/{{ docker_username }}/{{ app_name }}"
+docker_tag: latest
+
+# ===========================================
+# Installation Flags
+# ===========================================
+install_kubernetes: true
+install_elk: true
+install_vault: true
+install_monitoring: true
+
+# ===========================================
+# Docker Configuration
+# ===========================================
+docker_version: "24.0"
+docker_compose_version: "2.21.0"
+
+docker_users:
+  - ubuntu
+  - jenkins
+
+# ===========================================
+# Kubernetes Configuration
+# ===========================================
+k8s_version: "1.28"
+k8s_namespace: mlops-credit
+k8s_replicas: 2
+
+# Pod resource limits
+k8s_resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# HPA Configuration (Horizontal Pod Autoscaler)
+hpa_min_replicas: 2
+hpa_max_replicas: 10
+hpa_target_cpu_utilization: 70
+hpa_target_memory_utilization: 80
+
+# ===========================================
+# ELK Stack Configuration
+# ===========================================
+elk_version: "8.11.0"
+
+elasticsearch:
+  port: 9200
+  heap_size: "512m"
+  cluster_name: mlops-elk
+  
+logstash:
+  port: 5044
+  heap_size: "256m"
+  
+kibana:
+  port: 5601
+
+# ===========================================
+# Vault Configuration
+# ===========================================
+vault_version: "1.15"
+vault_port: 8200
+vault_dev_mode: true  # Set to false for production
+
+# Secrets to store in Vault
+vault_secrets:
+  - path: secret/mlops/docker
+    data:
+      username: "{{ docker_username }}"
+      password: "{{ lookup('env', 'DOCKER_PASSWORD') | default('changeme') }}"
+  
+  - path: secret/mlops/database
+    data:
+      host: localhost
+      port: 5432
+      username: mlops
+      password: "{{ lookup('env', 'DB_PASSWORD') | default('changeme') }}"
+
+# ===========================================
+# Monitoring Configuration
+# ===========================================
+prometheus_port: 9090
+grafana_port: 3000
+grafana_admin_password: mlops123
+
+# ===========================================
+# Network Configuration
+# ===========================================
+firewall_allowed_ports:
+  - 22      # SSH
+  - 80      # HTTP
+  - 443     # HTTPS
+  - 5000    # Application
+  - 5601    # Kibana
+  - 8200    # Vault
+  - 9090    # Prometheus
+  - 3000    # Grafana
+  - 9200    # Elasticsearch
+  - 6443    # Kubernetes API
+
+# ===========================================
+# Logging Configuration
+# ===========================================
+log_retention_days: 30
+log_path: /var/log/mlops
+json_logging: true

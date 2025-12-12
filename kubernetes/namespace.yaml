@@ -1,0 +1,9 @@
+# Kubernetes Namespace for MLOps Application
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlops-credit
+  labels:
+    app: mlops-credit-score
+    environment: production
+    team: mlops

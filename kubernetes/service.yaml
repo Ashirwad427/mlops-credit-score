@@ -1,0 +1,60 @@
+# Kubernetes Service for MLOps Application
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlops-credit-score
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+spec:
+  type: LoadBalancer  # Use ClusterIP for internal, NodePort for development
+  selector:
+    app: mlops-credit-score
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+  sessionAffinity: None
+
+---
+# Internal Service for cluster communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlops-credit-score-internal
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+spec:
+  type: ClusterIP
+  selector:
+    app: mlops-credit-score
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+
+---
+# Headless Service for StatefulSet (if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlops-credit-score-headless
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: mlops-credit-score
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000

@@ -1,0 +1,143 @@
+# Jenkins Configuration for MLOps Pipeline
+# This file documents the Jenkins setup requirements
+
+jenkins:
+  version: "2.426.1"
+  
+  # Required Plugins
+  plugins:
+    - name: git
+      version: "5.2.0"
+    - name: github
+      version: "1.37.1"
+    - name: github-branch-source
+      version: "2.11.4"
+    - name: pipeline-github
+      version: "2.8"
+    - name: docker-workflow
+      version: "572.v950f58993843"
+    - name: docker-plugin
+      version: "1.5"
+    - name: kubernetes
+      version: "4029.v5712230ccb_f8"
+    - name: kubernetes-cli
+      version: "1.12.1"
+    - name: credentials
+      version: "1271.v54b_1c2c6388a_"
+    - name: credentials-binding
+      version: "642.v737c34dea_6c2"
+    - name: hashicorp-vault-plugin
+      version: "360.v0a_1c04cf807d"
+    - name: slack
+      version: "664.vc9a_90f8b_c24a_"
+    - name: junit
+      version: "1240.vf9529b_881428"
+    - name: cobertura
+      version: "1.17"
+    - name: htmlpublisher
+      version: "1.32"
+    - name: timestamper
+      version: "1.26"
+    - name: ws-cleanup
+      version: "0.45"
+
+  # Required Credentials (to be configured in Jenkins)
+  credentials:
+    - id: docker-hub-credentials
+      type: usernamePassword
+      description: "Docker Hub credentials for pushing images"
+      
+    - id: github-credentials
+      type: usernamePassword
+      description: "GitHub credentials for repository access"
+      
+    - id: kubeconfig
+      type: secretFile
+      description: "Kubernetes configuration file"
+      
+    - id: vault-token
+      type: secretText
+      description: "HashiCorp Vault token"
+
+  # GitHub Webhook Configuration
+  github:
+    webhook:
+      enabled: true
+      secret: "your-webhook-secret"  # Configure in GitHub repository settings
+      events:
+        - push
+        - pull_request
+        
+    # Repository to monitor
+    repository:
+      url: "https://github.com/yourusername/mlops-credit-score"
+      branch: "main"
+
+  # Pipeline Configuration
+  pipeline:
+    definition:
+      script_path: "jenkins/Jenkinsfile"
+      
+    # Build Triggers
+    triggers:
+      - github_push
+      - poll_scm: "H/5 * * * *"
+      
+    # Build Parameters
+    parameters:
+      - name: FORCE_TRAIN
+        type: boolean
+        default: false
+        
+      - name: DEPLOY_ENV
+        type: choice
+        choices:
+          - development
+          - staging
+          - production
+          
+      - name: SKIP_TESTS
+        type: boolean
+        default: false
+
+# Docker Configuration for Jenkins
+docker:
+  # Jenkins should have access to Docker
+  socket: "/var/run/docker.sock"
+  
+  # Docker build configuration
+  build:
+    context: "."
+    dockerfile: "docker/Dockerfile"
+    args: []
+    
+  # Registry configuration
+  registry:
+    url: "https://index.docker.io/v1/"
+    credentials_id: "docker-hub-credentials"
+
+# Kubernetes Configuration
+kubernetes:
+  # Namespace for deployments
+  namespace: "mlops-credit"
+  
+  # Deployment configuration
+  deployment:
+    replicas: 2
+    strategy: "RollingUpdate"
+    
+  # Service configuration
+  service:
+    type: "LoadBalancer"
+    port: 5000
+
+# Notification Configuration
+notifications:
+  slack:
+    enabled: false
+    channel: "#mlops-builds"
+    webhook_url: ""  # Configure with actual webhook
+    
+  email:
+    enabled: false
+    recipients: []

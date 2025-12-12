@@ -1,0 +1,264 @@
+# MLOps Credit Score Prediction - Docker Compose
+# Complete stack with ELK, Vault, and application
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # Application Services
+  # ===========================================
+  
+  mlops-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mlops-api
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MODEL_DIR=/app/models
+      - LOG_FILE=/var/log/mlops/app.log
+      - JSON_LOGGING=true
+      - LOG_LEVEL=INFO
+      - VAULT_ADDR=http://vault:8200
+    volumes:
+      - ../models:/app/models:ro
+      - log-data:/var/log/mlops
+      - ../data:/app/data:ro
+    networks:
+      - mlops-network
+    depends_on:
+      - elasticsearch
+      - vault
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mlops.rule=Host(`mlops.localhost`)"
+
+  # Training Service (run on-demand)
+  mlops-train:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.train
+    container_name: mlops-train
+    environment:
+      - PYTHONPATH=/app
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ../models:/app/models
+      - ../data:/app/data:ro
+      - ../mlruns:/app/mlruns
+    networks:
+      - mlops-network
+    profiles:
+      - training
+    depends_on:
+      - mlflow
+
+  # ===========================================
+  # MLflow Tracking Server
+  # ===========================================
+  
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.0
+    container_name: mlflow
+    ports:
+      - "5001:5000"
+    volumes:
+      # Mount mlruns - use PWD for the host path binding
+      - ${PWD}/../mlruns:${PWD}/../mlruns
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri file://${PWD}/../mlruns
+      --default-artifact-root ${PWD}/../mlruns
+      --serve-artifacts
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ===========================================
+  # ELK Stack
+  # ===========================================
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green\\|status.*yellow'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: logstash
+    volumes:
+      - ../elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ../elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - log-data:/var/log/mlops:ro
+    ports:
+      - "5044:5044"
+      - "5045:5045"
+      - "9600:9600"
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+    networks:
+      - mlops-network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - mlops-network
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Filebeat for log shipping
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ../elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - log-data:/var/log/mlops:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - mlops-network
+    depends_on:
+      - elasticsearch
+      - logstash
+    restart: unless-stopped
+
+  # ===========================================
+  # HashiCorp Vault
+  # ===========================================
+  
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=mlops-dev-token
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault-data:/vault/data
+      - ../vault:/vault/config:ro
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ===========================================
+  # Monitoring (Optional - Prometheus/Grafana)
+  # ===========================================
+  
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - mlops-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mlops123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - mlops-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  mlops-network:
+    driver: bridge
+    name: mlops-network
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  model-data:
+    name: mlops-model-data
+  log-data:
+    name: mlops-log-data
+  elasticsearch-data:
+    name: mlops-elasticsearch-data
+  vault-data:
+    name: mlops-vault-data
+  prometheus-data:
+    name: mlops-prometheus-data
+  grafana-data:
+    name: mlops-grafana-data
+  mlflow-data:
+    name: mlops-mlflow-data

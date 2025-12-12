@@ -1,0 +1,26 @@
+# Ansible Inventory - Hosts Configuration
+
+[mlops_servers]
+mlops-master ansible_host=192.168.1.100 ansible_user=ubuntu
+mlops-worker1 ansible_host=192.168.1.101 ansible_user=ubuntu
+mlops-worker2 ansible_host=192.168.1.102 ansible_user=ubuntu
+
+[kubernetes_master]
+mlops-master
+
+[kubernetes_workers]
+mlops-worker1
+mlops-worker2
+
+[elk_servers]
+mlops-master
+
+[vault_servers]
+mlops-master
+
+[docker:children]
+mlops_servers
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_private_key_file=~/.ssh/mlops_key

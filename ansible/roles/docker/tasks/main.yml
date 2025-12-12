@@ -1,0 +1,82 @@
+# Docker Role - Main Tasks
+---
+- name: Install Docker dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Install Docker CE
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+  ignore_errors: yes
+
+- name: Install Docker Compose standalone
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_version_output
+  changed_when: false
+
+- name: Display Docker version
+  debug:
+    msg: "Docker installed: {{ docker_version_output.stdout }}"
+
+- name: Configure Docker daemon
+  copy:
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        },
+        "storage-driver": "overlay2"
+      }
+    dest: /etc/docker/daemon.json
+    mode: '0644'
+  notify: Restart Docker
+
+- name: Set docker_installed fact
+  set_fact:
+    docker_installed: yes

@@ -1,0 +1,31 @@
+# Kubernetes ConfigMap for MLOps Application
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlops-credit-config
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+data:
+  # Application configuration
+  APP_NAME: "mlops-credit-score"
+  PORT: "5000"
+  LOG_LEVEL: "INFO"
+  JSON_LOGGING: "true"
+  MODEL_DIR: "/app/models"
+  LOG_FILE: "/var/log/mlops/app.log"
+  
+  # ELK Stack configuration
+  ELASTICSEARCH_HOST: "elasticsearch.elk.svc.cluster.local"
+  ELASTICSEARCH_PORT: "9200"
+  
+  # Vault configuration
+  VAULT_ADDR: "http://vault.vault.svc.cluster.local:8200"
+  
+  # Feature flags
+  ENABLE_METRICS: "true"
+  ENABLE_HEALTH_CHECK: "true"
+  
+  # ML Configuration
+  CV_FOLDS: "5"
+  RANDOM_STATE: "42"

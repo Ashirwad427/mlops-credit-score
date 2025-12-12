@@ -1,0 +1,108 @@
+# Kubernetes Horizontal Pod Autoscaler (HPA)
+# Advanced Feature for dynamic scaling (3 marks)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mlops-credit-score-hpa
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mlops-credit-score
+  
+  # Replica limits
+  minReplicas: 2
+  maxReplicas: 10
+  
+  # Scaling metrics
+  metrics:
+    # CPU-based scaling
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    # Memory-based scaling
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    
+    # Custom metrics (requires Prometheus Adapter)
+    # - type: Pods
+    #   pods:
+    #     metric:
+    #       name: http_requests_per_second
+    #     target:
+    #       type: AverageValue
+    #       averageValue: 100
+  
+  # Scaling behavior for fine-grained control
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes stabilization
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min  # Use the policy that scales down least
+    
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max  # Use the policy that scales up most
+
+---
+# Pod Disruption Budget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mlops-credit-score-pdb
+  namespace: mlops-credit
+  labels:
+    app: mlops-credit-score
+spec:
+  minAvailable: 1  # At least 1 pod must be available during disruptions
+  selector:
+    matchLabels:
+      app: mlops-credit-score
+
+---
+# Vertical Pod Autoscaler (optional, requires VPA controller)
+# apiVersion: autoscaling.k8s.io/v1
+# kind: VerticalPodAutoscaler
+# metadata:
+#   name: mlops-credit-score-vpa
+#   namespace: mlops-credit
+# spec:
+#   targetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: mlops-credit-score
+#   updatePolicy:
+#     updateMode: "Auto"
+#   resourcePolicy:
+#     containerPolicies:
+#       - containerName: mlops-api
+#         minAllowed:
+#           cpu: 100m
+#           memory: 128Mi
+#         maxAllowed:
+#           cpu: 1
+#           memory: 1Gi

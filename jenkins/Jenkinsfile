@@ -1,0 +1,326 @@
+// MLOps Credit Score Prediction - Jenkinsfile
+// Complete CI/CD Pipeline with GitHub Webhook Trigger
+
+pipeline {
+    agent any
+    
+    // GitHub Webhook Trigger - GITScm Polling
+    triggers {
+        githubPush()
+        pollSCM('H/5 * * * *')  // Fallback polling every 5 minutes
+    }
+    
+    environment {
+        // Docker Hub credentials (stored in Jenkins credentials)
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_IMAGE_NAME = 'yourusername/mlops-hiv-prediction'
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
+        
+        // Kubernetes configuration
+        KUBECONFIG = credentials('kubeconfig')
+        K8S_NAMESPACE = 'mlops-hiv'
+        
+        // Vault configuration
+        VAULT_ADDR = 'http://vault:8200'
+        VAULT_TOKEN = credentials('vault-token')
+        
+        // Application settings
+        APP_NAME = 'mlops-hiv-prediction'
+        PYTHON_VERSION = '3.10'
+    }
+    
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 60, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    
+    stages {
+        // ===========================================
+        // Stage 1: Checkout
+        // ===========================================
+        stage('Checkout') {
+            steps {
+                echo '📥 Checking out source code...'
+                checkout scm
+                
+                script {
+                    // Get commit info
+                    env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.GIT_COMMIT_MSG = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    env.GIT_AUTHOR = sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
+                }
+                
+                echo "Commit: ${env.GIT_COMMIT_SHORT}"
+                echo "Author: ${env.GIT_AUTHOR}"
+                echo "Message: ${env.GIT_COMMIT_MSG}"
+            }
+        }
+        
+        // ===========================================
+        // Stage 2: Setup & Install Dependencies
+        // ===========================================
+        stage('Setup') {
+            steps {
+                echo '🔧 Setting up Python environment...'
+                sh '''
+                    python${PYTHON_VERSION} -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        // ===========================================
+        // Stage 3: Code Quality & Linting
+        // ===========================================
+        stage('Code Quality') {
+            parallel {
+                stage('Lint') {
+                    steps {
+                        echo '🔍 Running linting checks...'
+                        sh '''
+                            . venv/bin/activate
+                            pip install flake8 pylint
+                            flake8 app/ --max-line-length=120 --ignore=E501,W503 || true
+                            pylint app/ --disable=C0114,C0115,C0116 --exit-zero
+                        '''
+                    }
+                }
+                
+                stage('Security Scan') {
+                    steps {
+                        echo '🔒 Running security scan...'
+                        sh '''
+                            . venv/bin/activate
+                            pip install bandit safety
+                            bandit -r app/ -ll || true
+                            safety check -r requirements.txt || true
+                        '''
+                    }
+                }
+            }
+        }
+        
+        // ===========================================
+        // Stage 4: Run Tests
+        // ===========================================
+        stage('Test') {
+            steps {
+                echo '🧪 Running unit tests...'
+                sh '''
+                    . venv/bin/activate
+                    pytest app/tests/ -v --junitxml=test-results.xml --cov=app --cov-report=xml:coverage.xml --cov-report=html:coverage-html
+                '''
+            }
+            post {
+                always {
+                    junit 'test-results.xml'
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage-html',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report'
+                    ])
+                }
+            }
+        }
+        
+        // ===========================================
+        // Stage 5: Train Model (Conditional)
+        // ===========================================
+        stage('Train Model') {
+            when {
+                anyOf {
+                    changeset "data/**"
+                    changeset "app/model/**"
+                    expression { params.FORCE_TRAIN == true }
+                }
+            }
+            steps {
+                echo '🤖 Training ML model...'
+                sh '''
+                    . venv/bin/activate
+                    python -m app.model.train
+                '''
+                
+                // Archive model artifacts
+                archiveArtifacts artifacts: 'models/**', fingerprint: true
+            }
+        }
+        
+        // ===========================================
+        // Stage 6: Build Docker Image
+        // ===========================================
+        stage('Build Docker Image') {
+            steps {
+                echo '🐳 Building Docker image...'
+                sh '''
+                    docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} -f docker/Dockerfile .
+                    docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest
+                '''
+            }
+        }
+        
+        // ===========================================
+        // Stage 7: Push to Docker Hub
+        // ===========================================
+        stage('Push to Docker Hub') {
+            steps {
+                echo '📤 Pushing image to Docker Hub...'
+                sh '''
+                    echo $DOCKER_HUB_CREDENTIALS_PSW | docker login -u $DOCKER_HUB_CREDENTIALS_USR --password-stdin
+                    docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
+                    docker push ${DOCKER_IMAGE_NAME}:latest
+                    docker logout
+                '''
+            }
+        }
+        
+        // ===========================================
+        // Stage 8: Deploy to Kubernetes
+        // ===========================================
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo '☸️ Deploying to Kubernetes...'
+                
+                script {
+                    // Update image tag in deployment
+                    sh """
+                        sed -i 's|image: .*|image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}|g' kubernetes/deployment.yaml
+                    """
+                }
+                
+                sh '''
+                    # Apply Kubernetes manifests
+                    kubectl apply -f kubernetes/namespace.yaml
+                    kubectl apply -f kubernetes/configmap.yaml -n ${K8S_NAMESPACE}
+                    kubectl apply -f kubernetes/secrets.yaml -n ${K8S_NAMESPACE}
+                    kubectl apply -f kubernetes/deployment.yaml -n ${K8S_NAMESPACE}
+                    kubectl apply -f kubernetes/service.yaml -n ${K8S_NAMESPACE}
+                    kubectl apply -f kubernetes/hpa.yaml -n ${K8S_NAMESPACE}
+                    
+                    # Wait for deployment to be ready
+                    kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE} --timeout=300s
+                '''
+            }
+        }
+        
+        // ===========================================
+        // Stage 9: Integration Tests
+        // ===========================================
+        stage('Integration Tests') {
+            steps {
+                echo '🔗 Running integration tests...'
+                
+                script {
+                    // Get service URL
+                    def serviceUrl = sh(
+                        script: "kubectl get svc ${APP_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'",
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (serviceUrl) {
+                        env.SERVICE_URL = "http://${serviceUrl}:5000"
+                    } else {
+                        // Use port-forward for testing
+                        env.SERVICE_URL = "http://localhost:5000"
+                    }
+                }
+                
+                sh '''
+                    # Health check
+                    curl -s ${SERVICE_URL}/health | grep -q 'healthy'
+                    
+                    # Readiness check
+                    curl -s ${SERVICE_URL}/ready | grep -q 'ready'
+                    
+                    echo "✅ Integration tests passed!"
+                '''
+            }
+        }
+        
+        // ===========================================
+        // Stage 10: Cleanup
+        // ===========================================
+        stage('Cleanup') {
+            steps {
+                echo '🧹 Cleaning up...'
+                sh '''
+                    # Remove local Docker images to save space
+                    docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
+                    
+                    # Clean up Python virtual environment
+                    rm -rf venv || true
+                '''
+            }
+        }
+    }
+    
+    // ===========================================
+    // Post Actions
+    // ===========================================
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+            
+            // Send notification (Slack, Email, etc.)
+            script {
+                if (env.SLACK_WEBHOOK) {
+                    slackSend(
+                        color: 'good',
+                        message: "✅ Build #${env.BUILD_NUMBER} succeeded!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
+                    )
+                }
+            }
+        }
+        
+        failure {
+            echo '❌ Pipeline failed!'
+            
+            script {
+                if (env.SLACK_WEBHOOK) {
+                    slackSend(
+                        color: 'danger',
+                        message: "❌ Build #${env.BUILD_NUMBER} failed!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
+                    )
+                }
+            }
+        }
+        
+        always {
+            // Archive test results
+            archiveArtifacts artifacts: 'test-results.xml,coverage.xml', allowEmptyArchive: true
+            
+            // Clean workspace
+            cleanWs()
+        }
+    }
+    
+    // ===========================================
+    // Parameters
+    // ===========================================
+    parameters {
+        booleanParam(
+            name: 'FORCE_TRAIN',
+            defaultValue: false,
+            description: 'Force model retraining regardless of file changes'
+        )
+        
+        choice(
+            name: 'DEPLOY_ENV',
+            choices: ['development', 'staging', 'production'],
+            description: 'Target deployment environment'
+        )
+        
+        booleanParam(
+            name: 'SKIP_TESTS',
+            defaultValue: false,
+            description: 'Skip running tests (not recommended)'
+        )
+    }
+}
