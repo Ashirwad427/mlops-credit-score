@@ -41,7 +41,7 @@ pipeline {
         // ===========================================
         stage('Checkout') {
             steps {
-                echo '📥 Checking out source code...'
+                echo ' Checking out source code...'
                 checkout scm
                 
                 script {
@@ -62,7 +62,7 @@ pipeline {
         // ===========================================
         stage('Setup') {
             steps {
-                echo '🔧 Setting up Python environment...'
+                echo ' Setting up Python environment...'
                 sh '''
                     python${PYTHON_VERSION} -m venv venv
                     . venv/bin/activate
@@ -79,7 +79,7 @@ pipeline {
             parallel {
                 stage('Lint') {
                     steps {
-                        echo '🔍 Running linting checks...'
+                        echo ' Running linting checks...'
                         sh '''
                             . venv/bin/activate
                             pip install flake8 pylint
@@ -91,7 +91,7 @@ pipeline {
                 
                 stage('Security Scan') {
                     steps {
-                        echo '🔒 Running security scan...'
+                        echo ' Running security scan...'
                         sh '''
                             . venv/bin/activate
                             pip install bandit safety
@@ -108,7 +108,7 @@ pipeline {
         // ===========================================
         stage('Test') {
             steps {
-                echo '🧪 Running unit tests...'
+                echo ' Running unit tests...'
                 sh '''
                     . venv/bin/activate
                     pytest app/tests/ -v --junitxml=test-results.xml --cov=app --cov-report=xml:coverage.xml --cov-report=html:coverage-html
@@ -141,7 +141,14 @@ pipeline {
                 }
             }
             steps {
-                echo '🤖 Training ML model...'
+
+                echo ' Injecting local data into workspace...'
+                // --- ADD THIS LINE ---
+                // Copies .csv files from your local PC to the Jenkins workspace 'data' folder
+                sh 'cp /mnt/c/Users/Lenovo/OneDrive/Desktop/mlops-credit-score/mlops-credit-score/data/*.csv data/ || true'
+                // ---------------------
+                
+                echo ' Training ML model...'
                 sh '''
                     . venv/bin/activate
                     python -m app.model.train
@@ -158,12 +165,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
 
-                echo '📂 Injecting local models into workspace...'
+                echo ' Injecting local models into workspace...'
                 // --- ADD THIS (Update path to match the one you found in Step 3.1) ---
                 sh 'cp -r /mnt/c/Users/Lenovo/OneDrive/Desktop/mlops-credit-score/mlops-credit-score/models/* models/ || true'
                 // --------------------------------------------------------------------
                 
-                echo '🐳 Building Docker image...'
+                echo ' Building Docker image...'
                 sh '''
                     docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} -f docker/Dockerfile .
                     docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest
@@ -176,7 +183,7 @@ pipeline {
         // ===========================================
         stage('Push to Docker Hub') {
             steps {
-                echo '📤 Pushing image to Docker Hub...'
+                echo ' Pushing image to Docker Hub...'
                 sh '''
                     echo $DOCKER_HUB_CREDENTIALS_PSW | docker login -u $DOCKER_HUB_CREDENTIALS_USR --password-stdin
                     docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
@@ -191,8 +198,8 @@ pipeline {
         // ===========================================
         stage('Deploy to Kubernetes') {
             steps {
-                echo '☸️ Deploying to Kubernetes...'
-                
+                echo ' Deploying to Kubernetes...'
+            
                 script {
                     // Update image tag in deployment
                     sh """
@@ -220,7 +227,7 @@ pipeline {
         // ===========================================
         stage('Integration Tests') {
             steps {
-                echo '🔗 Running integration tests...'
+                echo ' Running integration tests...'
                 
                 script {
                     // Get service URL
@@ -244,7 +251,7 @@ pipeline {
                     # Readiness check
                     curl -s ${SERVICE_URL}/ready | grep -q 'ready'
                     
-                    echo "✅ Integration tests passed!"
+                    echo " Integration tests passed!"
                 '''
             }
         }
@@ -255,27 +262,27 @@ pipeline {
     // ===========================================
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo ' Pipeline completed successfully!'
             
             // Send notification (Slack, Email, etc.)
             script {
                 if (env.SLACK_WEBHOOK) {
                     slackSend(
                         color: 'good',
-                        message: "✅ Build #${env.BUILD_NUMBER} succeeded!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
+                        message: " Build #${env.BUILD_NUMBER} succeeded!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
                     )
                 }
             }
         }
         
         failure {
-            echo '❌ Pipeline failed!'
+            echo ' Pipeline failed!'
             
             script {
                 if (env.SLACK_WEBHOOK) {
                     slackSend(
                         color: 'danger',
-                        message: "❌ Build #${env.BUILD_NUMBER} failed!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
+                        message: " Build #${env.BUILD_NUMBER} failed!\nCommit: ${env.GIT_COMMIT_SHORT}\nAuthor: ${env.GIT_AUTHOR}"
                     )
                 }
             }
@@ -283,7 +290,7 @@ pipeline {
         
         always {
 
-            echo '🧹 Cleaning up to free space...'
+            echo ' Cleaning up to free space...'
             sh '''
                 # 1. Remove the specific images we just built
                 docker rmi -f ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} || true
