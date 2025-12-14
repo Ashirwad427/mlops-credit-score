@@ -4,7 +4,7 @@ import json
 import time
 
 def test_prediction(url):
-    print(f"🚀 Testing API at: {url}")
+    print(f" Testing API at: {url}")
     
     # Endpoint for prediction
     predict_url = f"{url}/predict"
@@ -31,18 +31,18 @@ def test_prediction(url):
             response = requests.post(predict_url, data=json.dumps(payload), headers=headers, timeout=5)
             
             if response.status_code == 200:
-                print("✅ Success! API returned 200 OK")
+                print(" Success! API returned 200 OK")
                 print("Response:", response.json())
                 return True
             else:
-                print(f"⚠️ Failed with status {response.status_code}: {response.text}")
+                print(f" Failed with status {response.status_code}: {response.text}")
                 
         except Exception as e:
-            print(f"⚠️ Connection error: {e}")
+            print(f" Connection error: {e}")
         
         time.sleep(5) # Wait before retrying
 
-    print("❌ API Test Failed after multiple attempts")
+    print(" API Test Failed after multiple attempts")
     sys.exit(1)
 
 if __name__ == "__main__":
