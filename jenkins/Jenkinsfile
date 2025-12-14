@@ -222,37 +222,44 @@ pipeline {
             }
         }
         
-        // ===========================================
+// ===========================================
         // Stage 9: Integration Tests
         // ===========================================
         stage('Integration Tests') {
             steps {
-                echo ' Running integration tests...'
-                
+                echo ' Running API Integration Tests...'
                 script {
-                    // Get service URL
-                    def serviceUrl = sh(
-                        script: "kubectl get svc ${APP_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'",
+                    // 1. Wait for deployment to be fully ready
+                    sh 'kubectl rollout status deployment/mlops-credit-score -n ${K8S_NAMESPACE} --timeout=120s'
+                    
+                    // 2. Extract the NodePort (External Access Port)
+                    def nodePort = sh(
+                        script: "kubectl get svc mlops-credit-score -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'", 
                         returnStdout: true
                     ).trim()
                     
-                    if (serviceUrl) {
-                        env.SERVICE_URL = "http://${serviceUrl}:5000"
-                    } else {
-                        // Use port-forward for testing
-                        env.SERVICE_URL = "http://localhost:5000"
-                    }
+                    // 3. Construct the Minikube URL (Using fixed Minikube IP)
+                    // Note: Ensure this matches your minikube ip (usually 192.168.49.2)
+                    def minikubeIp = "192.168.49.2" 
+                    def apiUrl = "http://${minikubeIp}:${nodePort}"
+                    
+                    echo "🔗 Testing against URL: ${apiUrl}"
+                    
+                    // 4. Run the Python test script
+                    sh """
+                        # Create venv if not exists (reusing setup from earlier)
+                        if [ ! -d "venv" ]; then
+                            python3 -m venv venv
+                            . venv/bin/activate
+                            pip install requests
+                        else
+                            . venv/bin/activate
+                        fi
+                        
+                        # Run the test
+                        python3 tests/api_test.py ${apiUrl}
+                    """
                 }
-                
-                sh '''
-                    # Health check
-                    curl -s ${SERVICE_URL}/health | grep -q 'healthy'
-                    
-                    # Readiness check
-                    curl -s ${SERVICE_URL}/ready | grep -q 'ready'
-                    
-                    echo " Integration tests passed!"
-                '''
             }
         }
     }
