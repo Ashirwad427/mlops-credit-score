@@ -1,19 +1,19 @@
 # MLOps DevOps Framework - Credit Score Prediction
 
-## 🎓 CSE 816: Software Production Engineering - Final Project
+##  CSE 816: Software Production Engineering - Final Project
 
 A complete MLOps DevOps framework implementing automated SDLC for Machine Learning pipelines using industry-standard DevOps tools.
 
-### 👥 Team Members
+###  Team Members
 - Ashirwad Mishra : IMT2022108
 - Ishan Singh : IMT2022124
 
 
-## 📋 Project Overview
+##  Project Overview
 
 This project implements a complete DevOps pipeline for an ML application that predicts credit scores using RandomForest and XGBoost classifiers with various sampling techniques (SMOTE, ADASYN, BorderlineSMOTE, RandomOverSampler).
 
-### 🏗️ Architecture
+###  Architecture
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
@@ -36,7 +36,7 @@ This project implements a complete DevOps pipeline for an ML application that pr
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Component                | Tool                      | Purpose                             |
 |--------------------------|---------------------------|-------------------------------------|
@@ -50,7 +50,7 @@ This project implements a complete DevOps pipeline for an ML application that pr
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 mlops-credit-score/
@@ -110,7 +110,7 @@ mlops-credit-score/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -146,9 +146,9 @@ kubectl get pods -n mlops-credit
 
 ---
 
-## 🔧 Features
+##  Features
 
-### ✅ Core Requirements
+###  Core Requirements
 - [x] Git version control with GitHub
 - [x] Jenkins CI/CD with GitHub webhooks
 - [x] Docker containerization
@@ -156,19 +156,19 @@ kubectl get pods -n mlops-credit
 - [x] Kubernetes orchestration
 - [x] ELK Stack monitoring
 
-### ⭐ Advanced Features (3 Marks)
+###  Advanced Features (3 Marks)
 - [x] **Vault Integration**: Secure storage of credentials
 - [x] **Ansible Roles**: Modular playbook design
 - [x] **Kubernetes HPA**: Horizontal Pod Autoscaling
 
-### 🎯 Domain-Specific (MLOps - 5 Marks)
+###  Domain-Specific (MLOps - 5 Marks)
 - [x] ML Model Training Pipeline
 - [x] Model versioning
 - [x] A/B Testing support
 - [x] Model performance monitoring
 - [x] Automated retraining triggers
 
-### 💡 Innovation (2 Marks)
+###  Innovation (2 Marks)
 - [x] Blue-Green deployment strategy
 - [x] Canary releases
 - [x] ML model rollback capability
@@ -176,7 +176,7 @@ kubectl get pods -n mlops-credit
 
 ---
 
-## 📊 ML Models
+##  ML Models
 
 ### Classifiers
 - **RandomForest Classifier**
@@ -198,7 +198,7 @@ kubectl get pods -n mlops-credit
 
 ---
 
-## 🔄 CI/CD Pipeline
+##  CI/CD Pipeline
 
 ### Pipeline Stages
 1. **Checkout**: Fetch code from GitHub
@@ -218,7 +218,7 @@ Jenkins is configured with GitHub webhook to trigger builds on:
 
 ---
 
-## 📈 Monitoring with ELK Stack
+##  Monitoring with ELK Stack
 
 ### Log Types
 - Application logs
@@ -234,7 +234,7 @@ Jenkins is configured with GitHub webhook to trigger builds on:
 
 ---
 
-## 🔐 Security Features
+##  Security Features
 
 ### Vault Integration
 - API keys storage
@@ -250,7 +250,7 @@ Jenkins is configured with GitHub webhook to trigger builds on:
 
 ---
 
-## 📚 API Endpoints
+##  API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -262,7 +262,7 @@ Jenkins is configured with GitHub webhook to trigger builds on:
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Run unit tests
@@ -276,13 +276,3 @@ pytest app/tests/test_api.py -v
 ```
 
 ---
-
-## 📝 License
-
-This project is part of CSE 816: Software Production Engineering course.
-
----
-
-## 📧 Contact
-
-For questions or support, contact the team members.
