@@ -73,23 +73,9 @@ pipeline {
         }
         
         // ===========================================
-        // Stage 3: Code Quality & Linting
+        // Stage 3: Security Scan
         // ===========================================
-        stage('Code Quality') {
-            parallel {
-                stage('Lint') {
-                    steps {
-                        echo ' Running linting checks...'
-                        sh '''
-                            . venv/bin/activate
-                            pip install flake8 pylint
-                            flake8 app/ --max-line-length=120 --ignore=E501,W503 || true
-                            pylint app/ --disable=C0114,C0115,C0116 --exit-zero
-                        '''
-                    }
-                }
-                
-                stage('Security Scan') {
+        stage('Security Scan') {
                     steps {
                         echo ' Running security scan...'
                         sh '''
@@ -99,8 +85,6 @@ pipeline {
                             safety check -r requirements.txt || true
                         '''
                     }
-                }
-            }
         }
         
         // ===========================================
